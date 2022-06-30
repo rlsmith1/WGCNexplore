@@ -1,0 +1,204 @@
+---
+title: "Minmum module size & cut height"
+author: "Rachel Smith"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align = "center")
+
+# libraries
+
+        library(tidyverse)
+        library(WGCNA)
+        library(janitor)
+
+# set theme for plots
+
+    theme_set(theme_bw() +
+                theme(plot.title = element_text(size = 20),
+                      axis.title = element_text(size = 18),
+                      axis.text = element_text(size = 15),
+                      strip.text = element_text(size = 18),
+                      legend.title = element_text(size = 15),
+                      legend.text = element_text(size = 12)))
+    
+# parallelize
+    
+    doParallel::registerDoParallel()
+    
+```
+
+### SELECT SFT POWERS HERE
+
+```{r powers}
+
+dx <- "schizo"
+
+powers <- c(4, 8, 9, 10)
+
+```
+
+```{r data}
+
+ # load residuals data
+
+load(paste0("../objects/", Sys.Date(), "_", dx, "_resids.Rdata"))
+
+```
+
+```{r adj_matrix}
+
+# create TOM matrices for each SFT in a loop
+
+l_tom_matrix <- list()
+for (i in powers) {
+        
+        sft <- i 
+        adjacency <- adjacency(m_resids_t, power = sft)
+        
+        # topological overlap matrix (TOM)
+        TOM <- TOMsimilarity(adjacency)
+        diss_TOM <- 1 - TOM
+        
+        # call the hierarchical clustering function
+        gene_tree <- hclust(as.dist(diss_TOM))
+        
+        # create temporary list of diss_TOM and gene_tree
+        l_tmp <- list(diss_TOM, gene_tree)
+        names(l_tmp) <- c("diss_TOM", "gene_tree")
+        
+        # append to overall list
+        l_tom_matrix[[length(l_tom_matrix) + 1]] <- l_tmp  
+        
+}
+
+names(l_tom_matrix) <- paste0("sft", powers)
+
+```
+
+```{r min_size_cut_height}
+
+# assign modules based on different parameters in for loop
+min_mod_size <- c(30, 50)
+cut_heights <- c(0.15, 0.20, 0.25)
+df_modules <- tibble()
+
+for (sft in powers) {
+        
+        print(paste0("sft = ", sft))
+        
+        diss_TOM <- l_tom_matrix[[paste0("sft", sft)]]$diss_TOM
+        gene_tree <- l_tom_matrix[[paste0("sft", sft)]]$gene_tree
+        
+        for (i in min_mod_size) {
+                
+                print(paste0("assigning modules for minimum module size = ", i))
+                
+                dynamic_mods <- cutreeDynamic(dendro = gene_tree,
+                                              distM = diss_TOM,
+                                              pamRespectsDendro = FALSE,
+                                              minClusterSize = i)
+                dynamic_colors <- labels2colors(dynamic_mods)
+                
+                for (j in cut_heights) {
+                        
+                        print(paste0("merging modules at cut_height = ", j))
+                        
+                        # call an automatic merging function using cutHeight
+                        merge <- mergeCloseModules(m_resids_t,
+                                                   dynamic_mods,
+                                                   cutHeight = j,
+                                                   verbose = 3)
+                        merged_mods <- merge$colors
+                        merged_colors <- labels2colors(merged_mods)
+                        
+                        # create df
+                        df_tmp <- tibble(sft = sft,
+                                         min_size = i,
+                                         cut_height = j,
+                                         ensembl_gene_id = df_resids$ensembl_gene_id,
+                                         dynamic_mod_color = dynamic_colors,
+                                         merged_mod_color = merged_colors)
+                        
+                        df_modules <- df_modules %>% bind_rows(df_tmp)
+                        
+                }
+                
+        }
+
+}
+
+     
+```
+
+```{r format_df_modules}
+
+# create mod_set column
+        df_modules <- df_modules %>% 
+          mutate(mod_set = paste0("sft", sft, sep = "_",
+                                  "minSize", min_size, sep = "_",
+                                  "cutHeight", cut_height), .before = 1)
+
+# throw out any group with no grey module
+        df_modules <- df_modules %>% 
+                group_by(mod_set) %>% 
+                filter(any(dynamic_mod_color == "grey")) %>% 
+                ungroup()
+
+# renumber modules based on size
+        df_dynamic_mod_no <- df_modules %>% 
+          group_by(sft, min_size, cut_height) %>% 
+          dplyr::count(dynamic_mod_color) %>% 
+          arrange(sft, min_size, cut_height, desc(dynamic_mod_color == "grey"), desc(n)) %>% 
+          mutate(dynamic_module = 0:(n() - 1) %>% 
+                         factor(levels = 0:(n() - 1)))
+        
+        df_merged_mod_no <- df_modules %>%
+          group_by(sft, min_size, cut_height) %>% 
+          dplyr::count(merged_mod_color) %>% 
+          arrange(sft, min_size, cut_height, desc(merged_mod_color == "grey"), desc(n)) %>% 
+          mutate(merged_module = 0:(n() - 1) %>% factor(levels = 0:(n() - 1)))
+        
+        df_modules <- df_modules %>% 
+          left_join(df_dynamic_mod_no %>% dplyr::select(-n)) %>% 
+          left_join(df_merged_mod_no %>% dplyr::select(-n))
+        
+# save object for future use
+        save(df_modules, 
+             file = paste0("../objects/", Sys.Date(), "_", dx, "_module_assignments.RDS"))
+
+```
+
+```{r plot}
+
+df_module_sizes <- df_modules %>%
+        group_by(sft, min_size, cut_height) %>%
+        dplyr::count(merged_module) %>% 
+        ungroup()
+
+new_powers <- df_module_sizes %>% pull(sft) %>% unique()
+
+for (i in new_powers) {
+        
+        n_mods <- max(df_module_sizes$merged_module %>% as.character %>% as.numeric)
+        p <- df_module_sizes %>%
+                
+                filter(sft == i) %>% 
+                
+                ggplot(aes(x = merged_module, y = n)) +
+                geom_point(shape = 1, size = 2) +
+                facet_grid(min_size ~ cut_height, labeller = label_both) +
+                labs(x = "module", y = "n genes") +
+                scale_x_discrete(breaks = seq(from = 0, to = n_mods, by = 5)) +
+                ggtitle(paste0(dx, " sft = ", i))
+        
+        print(p)
+        
+}
+
+
+```
+

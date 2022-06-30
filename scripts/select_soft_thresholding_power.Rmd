@@ -1,0 +1,127 @@
+---
+title: "Select soft-thresholding power"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align = "center")
+
+# libraries
+
+        library(tidyverse)
+        library(WGCNA)
+        library(janitor)
+
+# set theme for plots
+
+    theme_set(theme_bw() +
+                theme(plot.title = element_text(size = 20),
+                      axis.title = element_text(size = 18),
+                      axis.text = element_text(size = 15),
+                      strip.text = element_text(size = 18),
+                      legend.title = element_text(size = 15),
+                      legend.text = element_text(size = 12)))
+
+```
+
+### SELECT DIAGNOSIS HERE
+```{r dx, echo = TRUE}
+
+dx <- "schizo"
+
+```
+
+
+
+### Read in count data
+Gene expression data have been filtered, cleaned, explored, and regressed based on covariate exploration. Selecting soft-thresholding power (SFT) is the first step in WGCNA analysis.
+
+Data should be in the format of a gene x sample matrix, saved as a csv called "gene_expression_data.csv" in the data/ directory.
+
+```{r read_data}
+
+df_resids <- read.csv("../data/gene_expression_data.csv") %>% 
+        as_tibble() %>%
+        rename_at(2:ncol(.), ~str_remove(.x, "X"))
+ 
+# filter for diagnostic group of interest
+df_resids <- df_resids %>% dplyr::select(ensembl_gene_id, contains(dx))
+       
+```
+
+```{r convert_to_mat}
+
+# transpose data and convert to matrix for sft selection
+
+      df_resids_t <- df_resids %>%
+        
+        # transpose & convert to tibble
+        dplyr::select(-1) %>%
+        t %>%
+        as.data.frame %>%
+        as_tibble %>%
+        
+        # rename columns with gene id from original df
+        rename_all(~df_resids %>% pull(ensembl_gene_id)) %>%
+        
+        # add sample id col using colnames of original df (to maintain order)
+        dplyr::mutate(sample = df_resids %>% dplyr::select(-1) %>% colnames, .before = 1)
+
+# convert to matrix
+
+        m_resids_t <- df_resids_t %>% 
+                as.data.frame %>% 
+                column_to_rownames("sample")
+        
+# save for future scripts
+        
+        save(df_resids, m_resids_t,
+             file = paste0("../objects/", Sys.Date(), "_", dx, "_resids.Rdata"))
+
+```
+
+```{r check_sft_fit}
+
+# choose a set of soft-thresholding powers
+        powers <- 1:16
+        
+# Call the network topology analysis function
+        sft <- pickSoftThreshold(m_resids_t, powerVector = powers, verbose = 5)
+        
+# create df of results
+        df_sft <- sft$fitIndices %>% as_tibble %>% clean_names
+
+```
+
+```{r plot}
+
+# scale-free topology fit index as a function of the soft-thresholding power
+        df_sft %>% 
+                ggplot(aes(x = power, y = -sign(slope)*sft_r_sq)) +
+                geom_text(aes(label = power), size = 5) +
+                
+                # geom_hline(yintercept = 0.8, lty = 2, color = "red") +
+                geom_hline(yintercept = 0.9, lty = 2, color = "red") +
+                
+                xlab("Soft threshold (power)") +
+                ylab("Scale free topology model fit (signed R^2)") +
+                ggtitle(dx)
+
+# Median connectivity as a function of the soft-thresholding power
+        df_sft %>% 
+                ggplot(aes(x = power, y = median_k)) +
+                geom_text(aes(label = power), size = 5) +
+                geom_hline(yintercept = 100, lty = 2, color = "black") +
+                
+                xlab("Soft threshold (power)") +
+                ylab("Median connectivity") +
+                ggtitle(dx)
+
+```
+
+
+
+
+
