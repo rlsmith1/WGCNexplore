@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align 
                 theme(plot.title = element_text(size = 20),
                       axis.title = element_text(size = 18),
                       axis.text = element_text(size = 15),
-                      strip.text = element_text(size = 18),
+                      strip.text = element_text(size = 15),
                       legend.title = element_text(size = 15),
                       legend.text = element_text(size = 12)))
     
@@ -33,11 +33,11 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align 
 
 ### SELECT SFT POWERS HERE
 
-```{r powers}
+```{r powers, echo = TRUE}
 
-dx <- "schizo"
+dx <- "mdd"
 
-powers <- c(4, 8, 9, 10)
+powers <- c(9, 10, 11, 12)
 
 ```
 
@@ -49,7 +49,7 @@ load(paste0("../objects/", Sys.Date(), "_", dx, "_resids.Rdata"))
 
 ```
 
-```{r adj_matrix}
+```{r adj_matrix, results = "hide"}
 
 # create TOM matrices for each SFT in a loop
 
@@ -79,7 +79,7 @@ names(l_tom_matrix) <- paste0("sft", powers)
 
 ```
 
-```{r min_size_cut_height}
+```{r min_size_cut_height, results = "hide"}
 
 # assign modules based on different parameters in for loop
 min_mod_size <- c(30, 50)

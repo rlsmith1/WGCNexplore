@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align 
 ### SELECT DIAGNOSIS HERE
 ```{r dx, echo = TRUE}
 
-dx <- "schizo"
+dx <- "mdd"
 
 ```
 
@@ -82,7 +82,7 @@ df_resids <- df_resids %>% dplyr::select(ensembl_gene_id, contains(dx))
 
 ```
 
-```{r check_sft_fit}
+```{r check_sft_fit, results = "hide"}
 
 # choose a set of soft-thresholding powers
         powers <- 1:16
