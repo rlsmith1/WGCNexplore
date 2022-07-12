@@ -46,8 +46,9 @@
                 filter(mod_set %in% c("sft8_minSize30_cutHeight0.2", "sft9_minSize30_cutHeight0.15",
                                       "sft9_minSize30_cutHeight0.2")) %>% 
                 dplyr::rename("module" = "merged_module")
-        
 
+        
+        
 # load GO data from biomaRt -----------------------------------------------
 
      
@@ -55,21 +56,21 @@
         gene_universe <- df_modules %>% pull(ensembl_gene_id) %>% unique
         
         # GET GENE INFO FROM ENSEMBL DATABASE
-        # hsapiens_ensembl <- useEnsembl(biomart = "genes",
-        #                                dataset = "hsapiens_gene_ensembl",
-        #                                version = 88) # GRCh38.87
-        # 
-        # # MAP EACH GENE TO GO TERM
-        # df_gene_go <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id", "namespace_1003", "name_1006"),
-        #                     filters = "ensembl_gene_id",
-        #                     values = gene_universe,
-        #                     mart = hsapiens_ensembl) %>% 
-        #         as.data.frame() %>% 
-        #         as_tibble() %>% 
-        #         filter(go_id != "") %>% 
-        #         dplyr::rename("gene_ontology" = "namespace_1003",
-        #                       "term" = "name_1006")
-        # 
+        hsapiens_ensembl <- useEnsembl(biomart = "genes",
+                                       dataset = "hsapiens_gene_ensembl",
+                                       version = 88) # GRCh38.87
+
+        # MAP EACH GENE TO GO TERM
+        df_gene_go <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id", "namespace_1003", "name_1006"),
+                            filters = "ensembl_gene_id",
+                            values = gene_universe,
+                            mart = hsapiens_ensembl) %>%
+                as.data.frame() %>%
+                as_tibble() %>%
+                filter(go_id != "") %>%
+                dplyr::rename("gene_ontology" = "namespace_1003",
+                              "term" = "name_1006")
+
         # save(df_gene_go, file = "objects/gene_ontology_data.RDS")
         
         # BUILD ANNOTATION LIST
@@ -149,64 +150,63 @@
 
 # module GO enrichment plots -----------------------------------------------------
 
-# 
-#         # STRENGTH OF ENRICHMENT
-#                 
-#                 df_mods_go %>% filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
-#                         
-#                         ggplot(aes(x = -log10(p_adj))) +
-#                         geom_histogram() +
-#                         facet_wrap(~module, scales = "free") +
-#                         
-#                         geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
-#                         geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
-#                         geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
-#                         theme(strip.text = element_text(size = 8))
-#                 
-#         # ENRICHMENT TERMS
-#                 
-#                 df_mods_go %>% filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
-#                         
-#                         group_by(module) %>% arrange(module, p_adj) %>% top_n(n = 5) %>% # filter(module == 19) %>%
-#                         ggplot(aes(x = -log10(p_adj), y = reorder(str_wrap(term, width = 15), -p_adj))) +
-#                         geom_point(aes(size = significant/annotated, color = p_adj)) +
-#                         labs(y = "") +
-#                         facet_wrap(~module, scales = "free") +
-#                         
-#                         geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
-#                         geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
-#                         geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
-#                         
-#                         theme(axis.text = element_text(size = 6),
-#                               strip.text = element_text(size = 6))
-#                 
-#         # WORD CLOUDS
-#                 
-#                 df_mods_go_bigrams %>%
-#                         ungroup %>%
-#                         filter(!grepl("regulation|pathway|process|signal", ngram)) %>%
-#                         filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
-#                         filter(module != 0) %>% 
-#                         
-#                         group_by(module) %>%
-#                         mutate(size = n/max(n)) %>%
-#                         top_n(n = 10) %>% # filter(module == 12) %>%
-#                         
-#                         mutate(angle = 90 * sample(c(0, 1), n(), replace = TRUE, prob = c(70, 30)),
-#                                angle = ifelse(row_number() <= 3, 0, angle)) %>%
-#                         mutate(module = factor(module, levels = 0:max(module))) %>%
-#                         
-#                         ggplot(aes(label = ngram,
-#                                    size = size,
-#                                    angle = angle,
-#                                    x = module,
-#                                    color = size)) +
-#                         geom_text_wordcloud_area(rm_outside = TRUE) +
-#                         scale_size_area(max_size = 6) +
-#                         facet_wrap(~module, scales = "free") +
-#                         theme_minimal() +
-#                         theme(strip.text = element_blank())
-#                 
+
+        # STRENGTH OF ENRICHMENT
+
+                df_mods_go %>% filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
+
+                        ggplot(aes(x = -log10(p_adj))) +
+                        geom_histogram() +
+                        facet_wrap(~module, scales = "free") +
+
+                        geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
+                        theme(strip.text = element_text(size = 8))
+
+        # ENRICHMENT TERMS
+                df_mods_go %>% filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
+
+                        group_by(module) %>% arrange(module, p_adj) %>% top_n(n = 5) %>% # filter(module == 19) %>%
+                        ggplot(aes(x = -log10(p_adj), y = reorder(str_wrap(term, width = 15), -p_adj))) +
+                        geom_point(aes(size = significant/annotated, color = p_adj)) +
+                        labs(y = "") +
+                        facet_wrap(~module, scales = "free") +
+
+                        geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
+
+                        theme(axis.text = element_text(size = 6),
+                              strip.text = element_text(size = 6))
+
+        # WORD CLOUDS
+
+                df_mods_go_bigrams %>%
+                        ungroup %>%
+                        filter(!grepl("regulation|pathway|process|signal", ngram)) %>%
+                        filter(mod_set == "sft10_minSize30_cutHeight0.2") %>%
+                        filter(module != 0) %>%
+
+                        group_by(module) %>%
+                        mutate(size = n/max(n)) %>%
+                        top_n(n = 10) %>% # filter(module == 12) %>%
+
+                        mutate(angle = 90 * sample(c(0, 1), n(), replace = TRUE, prob = c(70, 30)),
+                               angle = ifelse(row_number() <= 3, 0, angle)) %>%
+                        mutate(module = factor(module, levels = 0:max(module))) %>%
+
+                        ggplot(aes(label = ngram,
+                                   size = size,
+                                   angle = angle,
+                                   x = module,
+                                   color = size)) +
+                        geom_text_wordcloud_area(rm_outside = TRUE) +
+                        scale_size_area(max_size = 6) +
+                        facet_wrap(~module, scales = "free") +
+                        theme_minimal() +
+                        theme(strip.text = element_blank())
+
                 
                                 
 
@@ -279,55 +279,55 @@
 # overlap GO enrichment plots -----------------------------------------------------
                 
                 
-        # # FORMAT DF FOR PLOTTING
-        #         df_mods_overlap_go_grouped <- df_mods_overlap_go %>%
-        #                 mutate(mod_set1 = factor(mod_set1, levels = unique(.$mod_set1)),
-        #                        mod_set2 = factor(mod_set2, levels = unique(.$mod_set2)),
-        #                        mod1 = factor(mod1, levels = levels(.$mod2))) %>%
-        #                 group_by(mod_set1, mod_set2) %>%
-        #                 mutate(group = cur_group_id(), .before = 1) %>%
-        #                 ungroup
-        #         
-        # # STRENGTH OF ENRICHMENT
-        #         
-        #         df_mods_overlap_go_grouped %>%
-        #                 filter(group == 1 & mod1 == 1 & mod2 == 2) %>%
-        #                 
-        #                 ggplot(aes(x = -log10(p_adj))) +
-        #                 geom_histogram() +
-        # 
-        #                 geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
-        #                 geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
-        #                 geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
-        #                 theme(strip.text = element_text(size = 8))
-        #         
-        #         # ENRICHMENT TERMS
-        #         
-        #         df_mods_overlap_go_grouped %>%
-        #                 
-        #                 # select mod_sets and modules
-        #                 # filter(mod_set1 == "sft10_minSize30_cutHeight0.15" & mod_set2 == "sft10_minSize30_cutHeight0.2") %>%
-        #                 filter(mod1 == 1) %>%
-        #                 
-        #                 # arrange to plot
-        #                 group_by(mod2) %>%
-        #                 arrange(mod1, mod2, p_adj) %>%
-        #                 top_n(n = 10) %>% 
-        # 
-        #                 ggplot(aes(x = -log10(p_adj), y = reorder(str_wrap(term, width = 15), -p_adj))) +
-        #                 geom_point(aes(size = significant/annotated, color = p_adj)) +
-        #                 labs(y = "") +
-        #                 facet_wrap(~mod2, scales = "free") +
-        #                 
-        #                 geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
-        #                 geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
-        #                 geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
-        #                 
-        #                 theme(axis.text = element_text(size = 6),
-        #                       strip.text = element_text(size = 6))
-        #         
-        #         # WORD CLOUDS
-        #         
+        # FORMAT DF FOR PLOTTING
+                df_mods_overlap_go_grouped <- df_mods_overlap_go %>%
+                        mutate(mod_set1 = factor(mod_set1, levels = unique(.$mod_set1)),
+                               mod_set2 = factor(mod_set2, levels = unique(.$mod_set2)),
+                               mod1 = factor(mod1, levels = levels(.$mod2))) %>%
+                        group_by(mod_set1, mod_set2) %>%
+                        mutate(group = cur_group_id(), .before = 1) %>%
+                        ungroup
+
+        # STRENGTH OF ENRICHMENT
+
+                df_mods_overlap_go_grouped %>%
+                        filter(group == 1 & mod1 == 1 & mod2 == 2) %>%
+
+                        ggplot(aes(x = -log10(p_adj))) +
+                        geom_histogram() +
+
+                        geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
+                        theme(strip.text = element_text(size = 8))
+
+                # ENRICHMENT TERMS
+
+                df_mods_overlap_go_grouped %>%
+
+                        # select mod_sets and modules
+                        # filter(mod_set1 == "sft10_minSize30_cutHeight0.15" & mod_set2 == "sft10_minSize30_cutHeight0.2") %>%
+                        filter(mod1 == 1) %>%
+
+                        # arrange to plot
+                        group_by(mod2) %>%
+                        arrange(mod1, mod2, p_adj) %>%
+                        top_n(n = 10) %>%
+
+                        ggplot(aes(x = -log10(p_adj), y = reorder(str_wrap(term, width = 15), -p_adj))) +
+                        geom_point(aes(size = significant/annotated, color = p_adj)) +
+                        labs(y = "") +
+                        facet_wrap(~mod2, scales = "free") +
+
+                        geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
+                        geom_vline(aes(xintercept = -log10(0.001)), lty = 2, color = "black") +
+
+                        theme(axis.text = element_text(size = 6),
+                              strip.text = element_text(size = 6))
+
+                # WORD CLOUDS
+
                 df_mods_overlap_go_bigrams %>%
                         ungroup %>%
                         filter(!grepl("regulation|pathway|process|signal", ngram)) %>%
