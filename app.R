@@ -60,7 +60,8 @@ text <- h4(
                     href = "https://cran.r-project.org/web/packages/WGCNA/index.html")),
           ", tutorials for which are provided here: ",
           tagList(a("WGCNA tutorials",
-                    href = "https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/"))
+                    href = "https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/")),
+          p("Example WGCNA scripts are also available in the 'Source code' link on the sidebar.")
         ),
         
         p(style="text-align: center;",
@@ -190,7 +191,7 @@ sidebar <- dashboardSidebar(
                 menuItem("Overview & Usage", tabName = "Tab1", icon = icon("info")),
                 menuItem("Module overlap", tabName = "Tab2", icon = icon('circle-nodes')),
                 menuItem("Module zoom & enrichment", tabName = "Tab3", icon = icon("dna")),
-                menuItem("Source code", icon = icon("code"), href = "https://github.com/rlsmith1/wgcna_app")
+                menuItem("Source code", icon = icon("code"), href = "https://github.com/rlsmith1/WGCNexplore")
         )
 )
 
@@ -1152,7 +1153,7 @@ server <- function(input, output, session) {
                         geom_point(aes(size = significant/annotated, color = -log10(p_adj))) +
                         labs(y = "") +
                         facet_wrap(~module, scales = "free", ncol = 2) +
-                        scale_y_discrete(labels = function(x) gsub("*_.", "", x)) +
+                        scale_y_discrete(labels = function(x) strsplit(x,"_")[[1]][1]) +
                         
                         geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
                         geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
@@ -1226,7 +1227,7 @@ server <- function(input, output, session) {
                         geom_point(aes(size = significant/annotated, color = -log10(p_adj))) +
                         labs(y = "") +
                         facet_wrap(~mod2 , scales = "free", ncol = 2) +
-                        scale_y_discrete(labels = function(x) gsub("*_.", "", x)) +
+                        scale_y_discrete(labels = function(x) strsplit(x,"_")[[1]][1]) +
                         
                         geom_vline(aes(xintercept = -log10(0.05)), lty = 2, color = "black") +
                         geom_vline(aes(xintercept = -log10(0.01)), lty = 2, color = "black") +
