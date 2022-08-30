@@ -482,7 +482,6 @@ server <- function(input, output, session) {
                 
         })
         
-        
         # create color df for alluvial plots based on number of modules
         df_colors_reactive <- reactive({
                 
