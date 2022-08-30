@@ -5,6 +5,39 @@ library(tidyverse)
 setwd("/Users/rachelsmith/Library/CloudStorage/OneDrive-NationalInstitutesofHealth/WGCNA/wgcna_app")
 
 ##
+## Get biomart info for all genes
+##
+
+library(biomaRt)
+hsapiens_ensembl <- useEnsembl(biomart = "genes",
+                               dataset = "hsapiens_gene_ensembl") # GRCh38.87
+
+df_gene_go <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id"),
+                   mart = hsapiens_ensembl) %>%
+        as.data.frame() %>%
+        as_tibble() %>%
+        filter(go_id != "")
+        
+df_go_term <- getBM(attributes = c("go_id", "name_1006"),
+                    mart = hsapiens_ensembl) %>%
+        as.data.frame() %>%
+        as_tibble() %>% 
+        dplyr::rename("term" = "name_1006") %>% 
+        filter(go_id != "")
+
+df_gene_transcript <- getBM(attributes = c("ensembl_gene_id", "ensembl_transcript_id"),
+                            mart = hsapiens_ensembl) %>%
+        as.data.frame() %>%
+        as_tibble()
+
+df_transcript_gene_go_term <- df_gene_transcript %>% 
+        left_join(df_gene_go) %>% 
+        left_join(df_go_term) %>% 
+        distinct()
+
+save(df_transcript_gene_go_term, file = "shiny/wgcna_module_set_comparison/objects/transcript_gene_go_term.RDS")
+
+##
 ## load in and rename objects based on dx
 ##
 

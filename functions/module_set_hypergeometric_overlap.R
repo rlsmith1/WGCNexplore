@@ -5,8 +5,8 @@ f_module_overlap <- function(df,
                              mod_no2) {
   
   # find intersect between our gene lists associated with each module set
-  gene_list1 <- df %>% filter(mod_set == mod_set1) %>% pull(ensembl_gene_id)
-  gene_list2 <- df %>% filter(mod_set == mod_set2) %>% pull(ensembl_gene_id)
+  gene_list1 <- df %>% filter(mod_set == mod_set1 & !is.na(module)) %>% pull(ensembl_gene_id)
+  gene_list2 <- df %>% filter(mod_set == mod_set2 & !is.na(module)) %>% pull(ensembl_gene_id)
   
   gene_universe_intersect <- intersect(gene_list1, gene_list2) 
   

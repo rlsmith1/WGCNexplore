@@ -1,0 +1,14 @@
+name: wgcna_module_set_comparison
+title: wgcna_module_set_comparison
+username:
+account: rlsmith1
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6848419
+bundleId: 6251789
+url: https://rlsmith1.shinyapps.io/wgcna_module_set_comparison/
+when: 1661867172.08064
+lastSyncTime: 1661867172.08065
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: example_data.csv

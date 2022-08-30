@@ -2,10 +2,9 @@
 
 # libraries ---------------------------------------------------------------
 
-    library(tidyverse)
-    library(GO.db)
-    library(topGO)
-    library(biomaRt)
+    require(GO.db)
+    require(topGO)
+        library(shiny)
 
 
 
@@ -63,9 +62,4 @@ f_top_GO_modules <- function(gene_module,
   
   
 }
-
-
-
-
-
 
